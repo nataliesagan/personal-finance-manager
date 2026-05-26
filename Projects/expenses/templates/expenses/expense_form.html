@@ -1,0 +1,17 @@
+{% extends "expenses/base.html" %}
+{% block title %}Нова витрата{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 720px; margin: 0 auto;">
+    <h1>Нова витрата</h1>
+    <p class="muted" style="margin-bottom: 16px;">
+        Додайте витрату вручну. Категорія може бути уточнена моделлю автоматично.
+    </p>
+
+    {% include "expenses/partials/_expense_form.html" %}
+
+    <div style="margin-top: 16px;">
+        <a href="{% url 'expense_list' %}" class="btn btn-light">Повернутися до списку</a>
+    </div>
+</div>
+{% endblock %}

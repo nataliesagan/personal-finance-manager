@@ -1,0 +1,33 @@
+<form method="post"
+      hx-post="{% url 'expense_create' %}"
+      hx-target="#expense-table"
+      hx-swap="innerHTML"
+      class="form-grid">
+    {% csrf_token %}
+
+    <div>
+        <label for="{{ form.amount.id_for_label }}">Сума</label>
+        {{ form.amount }}
+        {{ form.amount.errors }}
+    </div>
+
+    <div>
+        <label for="{{ form.description.id_for_label }}">Опис</label>
+        {{ form.description }}
+        {{ form.description.errors }}
+    </div>
+
+    <div>
+        <label for="{{ form.category.id_for_label }}">Категорія</label>
+        {{ form.category }}
+        {{ form.category.errors }}
+    </div>
+
+    <div>
+        <label for="{{ form.notes.id_for_label }}">Коментар (необовʼязково)</label>
+        {{ form.notes }}
+        {{ form.notes.errors }}
+    </div>
+
+    <button type="submit" class="btn">Зберегти</button>
+</form>

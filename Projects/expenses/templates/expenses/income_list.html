@@ -1,0 +1,64 @@
+{% extends "expenses/base.html" %}
+{% block title %}Доходи{% endblock %}
+
+{% block content %}
+<h1>Мої доходи</h1>
+
+<div class="grid grid-2">
+    <div class="card">
+        <h2>Додати дохід</h2>
+        <form method="post" class="form-grid">
+            {% csrf_token %}
+
+            <div>
+                <label for="{{ form.amount.id_for_label }}">Сума</label>
+                {{ form.amount }}
+                {{ form.amount.errors }}
+            </div>
+
+            <div>
+                <label for="{{ form.category.id_for_label }}">Категорія</label>
+                {{ form.category }}
+                {{ form.category.errors }}
+            </div>
+
+            <div>
+                <label for="{{ form.description.id_for_label }}">Опис</label>
+                {{ form.description }}
+                {{ form.description.errors }}
+            </div>
+
+            <button type="submit" class="btn">Зберегти</button>
+        </form>
+    </div>
+
+    <div class="card table-wrap">
+        <h2>Історія доходів</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Категорія</th>
+                    <th>Сума</th>
+                    <th>Опис</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in incomes %}
+                    <tr>
+                        <td>{{ i.created_at|date:"Y-m-d" }}</td>
+                        <td>{{ i.get_category_display }}</td>
+                        <td>{{ i.amount|floatformat:2 }} грн</td>
+                        <td>{{ i.description }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="muted">Ще немає доходів.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

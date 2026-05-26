@@ -1,0 +1,54 @@
+{% if expenses %}
+<table>
+    <thead>
+        <tr>
+            <th>Дата</th>
+            <th>Опис</th>
+            <th>Категорія</th>
+            <th>Сума</th>
+            <th>Емоційність</th>
+            <th>Дії</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in expenses %}
+            <tr>
+                <td>{{ e.created_at|date:"Y-m-d H:i" }}</td>
+                <td>
+                    <strong>{{ e.description }}</strong>
+                    {% if e.notes %}
+                        <div class="muted" style="margin-top:6px;">{{ e.notes }}</div>
+                    {% endif %}
+                    <div class="muted" style="margin-top:6px;">
+                        ШІ впевненість: {{ e.ml_confidence|floatformat:2 }}
+                        {% if e.ml_confidence < 0.5 %}
+                            <span class="danger-text">(низька впевненість)</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td>{{ e.get_category_display }}</td>
+                <td>{{ e.amount|floatformat:2 }} грн</td>
+                <td>
+                    {% if e.is_emotional %}
+                        <span class="tag">{{ e.get_emotional_tag_display }}</span>
+                    {% else %}
+                        <span class="muted">звичайна</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="actions" style="margin: 0;">
+                        <a class="btn btn-light" href="{% url 'expense_edit' e.pk %}">Редагувати</a>
+
+                        <form method="post" action="{% url 'expense_delete' e.pk %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">Видалити</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+    <p class="muted">Ще немає витрат. Додайте першу або імпортуйте виписку.</p>
+{% endif %}

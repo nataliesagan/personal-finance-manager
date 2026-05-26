@@ -1,0 +1,32 @@
+{% extends "expenses/base.html" %}
+{% block title %}Мої витрати{% endblock %}
+
+{% block content %}
+<h1>Мої витрати</h1>
+
+<div class="actions">
+    <a class="btn" href="{% url 'expense_create' %}">Додати витрату</a>
+    <a class="btn btn-secondary" href="{% url 'transaction_import' %}">Імпорт з CSV</a>
+    <a class="btn btn-light" href="{% url 'transaction_export' %}">Експорт у CSV</a>
+</div>
+
+<div class="card" style="margin-bottom:16px;">
+    <form method="get" class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items:end;">
+        <div>
+            <label for="date_from">Від дати</label>
+            <input type="date" name="date_from" id="date_from" value="{{ request.GET.date_from }}">
+        </div>
+        <div>
+            <label for="date_to">До дати</label>
+            <input type="date" name="date_to" id="date_to" value="{{ request.GET.date_to }}">
+        </div>
+        <div>
+            <button class="btn" type="submit">Фільтрувати</button>
+        </div>
+    </form>
+</div>
+
+<div class="card table-wrap" id="expense-table">
+    {% include "expenses/partials/_expense_table.html" %}
+</div>
+{% endblock %}

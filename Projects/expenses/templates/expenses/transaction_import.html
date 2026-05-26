@@ -1,0 +1,42 @@
+{% extends "expenses/base.html" %}
+{% block title %}Імпорт транзакцій{% endblock %}
+
+{% block content %}
+<h1>Імпорт транзакцій</h1>
+
+<div class="actions">
+    <a class="btn btn-light" href="{% url 'transaction_export' %}">Експортувати поточні дані</a>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <form method="post" enctype="multipart/form-data" class="form-grid">
+            {% csrf_token %}
+            <div>
+                <label for="{{ form.source_format.id_for_label }}">Формат імпорту</label>
+                {{ form.source_format }}
+                {{ form.source_format.errors }}
+            </div>
+
+            <div>
+                <label for="{{ form.file.id_for_label }}">CSV-файл</label>
+                {{ form.file }}
+                {% if form.file.help_text %}
+                    <div class="help">{{ form.file.help_text }}</div>
+                {% endif %}
+                {{ form.file.errors }}
+            </div>
+
+            <button class="btn" type="submit">Імпортувати</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Що підтримується</h2>
+        <p>Система підтримує універсальний імпорт CSV або TSV. Мінімально потрібні колонки: дата, сума й опис.</p>
+        <p class="muted">Бажані заголовки колонок: date, time, amount, description, type, category. Також розпізнаються українські та російські варіанти: дата, сума, опис, тип, категорія.</p>
+        <p class="muted">Витрати можна передавати як від’ємну суму або як тип expense. Доходи — як додатну суму або тип income.</p>
+        <p class="muted">Окремих реальних шаблонів monobank або PrivatBank у проєкті немає, тому імпорт працює у форматі mono-like / privat-like за назвами колонок.</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,196 @@
+{% extends "expenses/base.html" %}
+{% block title %}Емоційні витрати{% endblock %}
+
+{% block content %}
+<h1>Аналіз емоційних витрат</h1>
+
+<div class="grid grid-4">
+    <div class="card">
+        <div class="muted">Загальні витрати за місяць</div>
+        <div class="metric">{{ total|floatformat:2 }} грн</div>
+    </div>
+    <div class="card">
+        <div class="muted">Емоційні витрати</div>
+        <div class="metric">{{ emotional_total|floatformat:2 }} грн</div>
+    </div>
+    <div class="card">
+        <div class="muted">Частка емоційних витрат</div>
+        <div class="metric">{{ emotional_percent|floatformat:1 }}%</div>
+    </div>
+    <div class="card">
+        <div class="muted">Найчастіший тип</div>
+        <div class="metric" style="font-size:20px;">
+            {% if top_tag_name %}{{ top_tag_name }}{% else %}Немає даних{% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-2" style="margin-top:16px;">
+    <div class="card">
+        <h2>Що з цим робити</h2>
+        <ul class="clean">
+            {% for advice in advice_list %}
+                <li>{{ advice }}</li>
+            {% empty %}
+                <li class="muted">Поки що порад немає.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="card chart-card">
+        <h2>Структура емоційних витрат</h2>
+        {% if top_tag_name %}
+            <p>Найбільш виражений тип: <strong>{{ top_tag_name }}</strong>.</p>
+        {% else %}
+            <p class="muted">Ще недостатньо даних для детального висновку.</p>
+        {% endif %}
+
+        <div class="chart-box">
+            <canvas id="emotionTagChart"></canvas>
+        </div>
+        <div id="emotionTagChartEmpty" class="empty-chart-text" style="display:none;">
+            Поки немає даних для побудови графіка.
+        </div>
+    </div>
+</div>
+
+<div class="card chart-card" style="margin-top:16px;">
+    <h2>Емоційні та звичайні витрати по днях</h2>
+    <div class="chart-box tall">
+        <canvas id="emotionTrendChart"></canvas>
+    </div>
+    <div id="emotionTrendChartEmpty" class="empty-chart-text" style="display:none;">
+        Недостатньо даних для побудови графіка.
+    </div>
+</div>
+
+<div class="card" style="margin-top:16px;">
+    <h2>ТОП-5 днів з найбільшими емоційними витратами</h2>
+    {% if top_days %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Сума емоційних витрат</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in top_days %}
+                        <tr>
+                            <td>{{ d.day }}</td>
+                            <td>{{ d.amount|floatformat:2 }} грн</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="muted">Немає достатньо даних.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function parseJsonSafe(value, fallback = []) {
+        try {
+            return JSON.parse(value);
+        } catch (e) {
+            return fallback;
+        }
+    }
+
+    function showEmptyChart(canvasId, emptyId) {
+        const canvas = document.getElementById(canvasId);
+        const empty = document.getElementById(emptyId);
+
+        if (canvas) {
+            canvas.style.display = 'none';
+        }
+        if (empty) {
+            empty.style.display = 'block';
+        }
+    }
+
+    const tagLabels = parseJsonSafe('{{ tag_labels_json|escapejs }}');
+    const tagValues = parseJsonSafe('{{ tag_values_json|escapejs }}');
+
+    const emoDaysLabels = parseJsonSafe('{{ emo_days_labels_json|escapejs }}');
+    const emoValues = parseJsonSafe('{{ emo_values_json|escapejs }}');
+    const normalValues = parseJsonSafe('{{ normal_values_json|escapejs }}');
+
+    if (tagLabels.length && tagValues.length) {
+        const ctxTag = document.getElementById('emotionTagChart');
+        new Chart(ctxTag, {
+            type: 'pie',
+            data: {
+                labels: tagLabels,
+                datasets: [{
+                    label: 'Емоційні витрати',
+                    data: tagValues,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    } else {
+        showEmptyChart('emotionTagChart', 'emotionTagChartEmpty');
+    }
+
+    if (emoDaysLabels.length && (emoValues.length || normalValues.length)) {
+        const ctxTrend = document.getElementById('emotionTrendChart');
+        new Chart(ctxTrend, {
+            type: 'bar',
+            data: {
+                labels: emoDaysLabels,
+                datasets: [
+                    {
+                        label: 'Емоційні витрати',
+                        data: emoValues,
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Звичайні витрати',
+                        data: normalValues,
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'грн'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+    } else {
+        showEmptyChart('emotionTrendChart', 'emotionTrendChartEmpty');
+    }
+</script>
+{% endblock %}

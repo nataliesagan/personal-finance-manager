@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Finance Manager{% endblock %}</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f5f7fb;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .nav {
+            background: #111827;
+            color: white;
+        }
+
+        .nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .brand {
+            font-weight: 700;
+            font-size: 20px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .nav-links a,
+        .nav-links button {
+            color: white;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.18);
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .nav-links a:hover,
+        .nav-links button:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        h1, h2, h3 {
+            margin-top: 0;
+        }
+
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+        }
+
+        .metric {
+            font-size: 32px;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 14px;
+            border-radius: 10px;
+            text-decoration: none;
+            background: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .btn:hover {
+            opacity: 0.92;
+        }
+
+        .btn-secondary {
+            background: #374151;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+        }
+
+        .btn-light {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f9fafb;
+        }
+
+        form.inline {
+            display: inline;
+        }
+
+        .messages {
+            margin-bottom: 16px;
+        }
+
+        .message {
+            padding: 12px 14px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .message.success {
+            background: #dcfce7;
+        }
+
+        .message.warning {
+            background: #fef3c7;
+        }
+
+        .message.error {
+            background: #fee2e2;
+        }
+
+        .muted {
+            color: #6b7280;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #3730a3;
+            font-size: 12px;
+        }
+
+        .progress {
+            width: 100%;
+            height: 10px;
+            border-radius: 999px;
+            background: #e5e7eb;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #2563eb;
+        }
+
+        .danger-text {
+            color: #b91c1c;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            background: white;
+        }
+
+        .help {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 6px;
+        }
+
+        ul.clean {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .chart-card {
+            min-height: 360px;
+        }
+
+        .chart-box {
+            position: relative;
+            width: 100%;
+            height: 290px;
+        }
+
+        .chart-box.tall {
+            height: 340px;
+        }
+
+        .empty-chart-text {
+            color: #6b7280;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+
+        @media (max-width: 640px) {
+            .metric {
+                font-size: 26px;
+            }
+
+            .chart-box {
+                height: 240px;
+            }
+
+            .chart-box.tall {
+                height: 280px;
+            }
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="nav">
+        <div class="container">
+            <a href="{% url 'dashboard' %}" class="brand">Finance Manager</a>
+
+            <div class="nav-links">
+                {% if user.is_authenticated %}
+                    <span>Привіт, {{ user.username }}!</span>
+                    <a href="{% url 'expense_list' %}">Витрати</a>
+                    <a href="{% url 'income_list' %}">Доходи</a>
+                    <a href="{% url 'budget_list' %}">Бюджети</a>
+                    <a href="{% url 'emotional_report' %}">Емоційні витрати</a>
+                    <a href="{% url 'transaction_import' %}">Імпорт</a>
+                    <a href="{% url 'transaction_export' %}">Експорт</a>
+
+                    <form method="post" action="{% url 'logout' %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit">Вийти</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'login' %}">Увійти</a>
+                    <a href="{% url 'signup' %}">Реєстрація</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="message {{ message.tags|default:'success' }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,59 @@
+{% extends "expenses/base.html" %}
+{% block title %}Бюджети{% endblock %}
+
+{% block content %}
+<h1>Місячні бюджети</h1>
+
+<div class="grid grid-2">
+    <div class="card">
+        <h2>Налаштувати бюджет</h2>
+
+        <form method="post" class="form-grid">
+            {% csrf_token %}
+
+            <div>
+                <label for="{{ form.category.id_for_label }}">Категорія</label>
+                {{ form.category }}
+                {{ form.category.errors }}
+            </div>
+
+            <div>
+                <label for="{{ form.monthly_limit.id_for_label }}">Місячний ліміт, грн</label>
+                {{ form.monthly_limit }}
+                {{ form.monthly_limit.errors }}
+            </div>
+
+            <button type="submit" class="btn">Зберегти бюджет</button>
+        </form>
+
+        <p class="help">
+            Якщо для обраної категорії бюджет уже існує, він буде оновлений.
+        </p>
+    </div>
+
+    <div class="card table-wrap">
+        <h2>Поточні бюджети</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Категорія</th>
+                    <th>Місячний ліміт</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in budgets %}
+                    <tr>
+                        <td>{{ b.get_category_display }}</td>
+                        <td>{{ b.monthly_limit|floatformat:2 }} грн</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="2" class="muted">Ви ще не налаштували жодного бюджету.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

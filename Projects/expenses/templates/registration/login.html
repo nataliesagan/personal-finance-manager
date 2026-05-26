@@ -1,0 +1,27 @@
+{% extends "expenses/base.html" %}
+{% block title %}Логін{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto bg-white shadow rounded p-6">
+    <h1 class="text-xl font-semibold mb-4">Вхід</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="mb-4">
+            <label class="block text-sm mb-1">Логін</label>
+            {{ form.username }}
+        </div>
+        <div class="mb-4">
+            <label class="block text-sm mb-1">Пароль</label>
+            {{ form.password }}
+        </div>
+        <button type="submit"
+                class="w-full bg-slate-800 text-white py-2 rounded hover:bg-slate-700">
+            Увійти
+        </button>
+    </form>
+    <p class="mt-4 text-sm">
+        Немає акаунта?
+        <a href="{% url 'signup' %}" class="text-blue-600 hover:underline">Зареєструватися</a>
+    </p>
+</div>
+{% endblock %}
