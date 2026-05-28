@@ -6,11 +6,12 @@
 
 <div class="actions">
     <a class="btn" href="{% url 'expense_create' %}">Додати витрату</a>
-    <a class="btn btn-secondary" href="{% url 'transaction_import' %}">Імпорт з CSV</a>
-    <a class="btn btn-light" href="{% url 'transaction_export' %}">Експорт у CSV</a>
+    <a class="btn btn-secondary" href="{% url 'transaction_import' %}">Імпорт виписки</a>
+    <a class="btn btn-light" href="{% url 'transaction_export' %}">Експорт даних</a>
 </div>
 
 <div class="card" style="margin-bottom:16px;">
+    <h2>Фільтр витрат</h2>
     <form method="get" class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items:end;">
         <div>
             <label for="date_from">Від дати</label>
@@ -24,6 +25,21 @@
             <button class="btn" type="submit">Фільтрувати</button>
         </div>
     </form>
+</div>
+
+<div class="grid grid-3" style="margin-bottom:16px;">
+    <div class="card">
+        <h3>Автоматична категоризація</h3>
+        <p class="muted">Система аналізує назву або опис витрати й визначає категорію без ручного вибору.</p>
+    </div>
+    <div class="card">
+        <h3>Емоційні витрати</h3>
+        <p class="muted">Кава, десерти, фастфуд, розваги, онлайн-шопінг і пізні покупки позначаються окремо.</p>
+    </div>
+    <div class="card">
+        <h3>Ручне уточнення</h3>
+        <p class="muted">Якщо потрібно, категорію можна змінити вручну під час редагування витрати.</p>
+    </div>
 </div>
 
 <div class="card table-wrap" id="expense-table">

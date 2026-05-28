@@ -1,33 +1,50 @@
-<form method="post"
-      hx-post="{% url 'expense_create' %}"
-      hx-target="#expense-table"
-      hx-swap="innerHTML"
-      class="form-grid">
+<form method="post" class="form-grid">
     {% csrf_token %}
 
     <div>
-        <label for="{{ form.amount.id_for_label }}">Сума</label>
+        <label>Сума</label>
         {{ form.amount }}
         {{ form.amount.errors }}
     </div>
 
     <div>
-        <label for="{{ form.description.id_for_label }}">Опис</label>
+        <label>Назва або опис витрати</label>
         {{ form.description }}
+        {% if form.description.help_text %}
+            <div class="help">{{ form.description.help_text }}</div>
+        {% else %}
+            <div class="help">
+                Введіть назву операції, товару або послуги. Наприклад: кава, торт, сукня, таксі, аптека.
+            </div>
+        {% endif %}
         {{ form.description.errors }}
     </div>
 
     <div>
-        <label for="{{ form.category.id_for_label }}">Категорія</label>
+        <label>Категорія</label>
         {{ form.category }}
+        {% if form.category.help_text %}
+            <div class="help">{{ form.category.help_text }}</div>
+        {% else %}
+            <div class="help">
+                Залиште “Автоматично”, щоб система сама визначила категорію за назвою витрати.
+            </div>
+        {% endif %}
         {{ form.category.errors }}
     </div>
 
     <div>
-        <label for="{{ form.notes.id_for_label }}">Коментар (необовʼязково)</label>
+        <label>Коментар</label>
         {{ form.notes }}
+        {% if form.notes.help_text %}
+            <div class="help">{{ form.notes.help_text }}</div>
+        {% else %}
+            <div class="help">
+                Необов’язкове поле. Можна залишити порожнім.
+            </div>
+        {% endif %}
         {{ form.notes.errors }}
     </div>
 
-    <button type="submit" class="btn">Зберегти</button>
+    <button type="submit" class="btn">Зберегти витрату</button>
 </form>

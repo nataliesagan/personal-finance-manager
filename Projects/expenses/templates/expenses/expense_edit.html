@@ -6,33 +6,44 @@
     <h1>Редагувати витрату</h1>
 
     <p class="muted" style="margin-bottom: 16px;">
-        Категорія була визначена ШІ з впевненістю {{ expense.ml_confidence|floatformat:2 }}.
-        Якщо категорія некоректна, змініть її вручну — це буде враховано як зворотний зв’язок.
+        Поточна категорія: <strong>{{ expense.get_category_display }}</strong>.
+        Впевненість автоматичного визначення: <strong>{{ expense.ml_confidence|floatformat:2 }}</strong>.
     </p>
+
+    <div class="message warning" style="margin-bottom: 16px;">
+        Якщо потрібно повторно визначити категорію автоматично, оберіть “Автоматично”.
+        Якщо потрібно залишити власний варіант, виберіть категорію вручну.
+    </div>
 
     <form method="post" class="form-grid">
         {% csrf_token %}
 
         <div>
-            <label for="{{ form.amount.id_for_label }}">Сума</label>
+            <label>Сума</label>
             {{ form.amount }}
             {{ form.amount.errors }}
         </div>
 
         <div>
-            <label for="{{ form.description.id_for_label }}">Опис</label>
+            <label>Назва або опис витрати</label>
             {{ form.description }}
+            <div class="help">Саме це поле використовується для автоматичного визначення категорії та емоційності витрати.</div>
             {{ form.description.errors }}
         </div>
 
         <div>
-            <label for="{{ form.category.id_for_label }}">Категорія</label>
+            <label>Категорія</label>
             {{ form.category }}
+            {% if form.category.help_text %}
+                <div class="help">{{ form.category.help_text }}</div>
+            {% else %}
+                <div class="help">Оберіть “Автоматично”, щоб система сама визначила категорію за назвою витрати.</div>
+            {% endif %}
             {{ form.category.errors }}
         </div>
 
         <div>
-            <label for="{{ form.notes.id_for_label }}">Коментар</label>
+            <label>Коментар</label>
             {{ form.notes }}
             {{ form.notes.errors }}
         </div>

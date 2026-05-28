@@ -13,7 +13,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 
-from .emotion_rules import analyze_emotional_expense
+from .emotion_rules import analyze_emotional_expense, analyze_emotional_expense_details
 from .forms import (
     ExpenseForm,
     SignUpForm,
@@ -22,7 +22,9 @@ from .forms import (
     TransactionImportForm,
 )
 from .models import Expense, Income, CategoryBudget, CategoryFeedback
-from .services.bank_io import import_transactions, safe_predict_expense_category
+from .ml.expense_classifier import predict_category_detailed
+from .services.bank_io import import_transactions
+from .services.category_engine import CATEGORY_LABELS, VALID_EXPENSE_CATEGORIES
 from .services.emotional_advice import build_emotional_advice
 
 logger = logging.getLogger(__name__)
@@ -34,6 +36,32 @@ class CustomLoginView(LoginView):
 
 class CustomLogoutView(LogoutView):
     pass
+
+
+def _resolve_expense_category(description: str, manual_category: str | None):
+    manual_category = manual_category or 'auto'
+    decision = predict_category_detailed(description)
+
+    if manual_category != 'auto' and manual_category in VALID_EXPENSE_CATEGORIES:
+        return manual_category, decision.confidence, f'Категорію встановлено вручну: {CATEGORY_LABELS.get(manual_category, manual_category)}.'
+
+    if decision.category in VALID_EXPENSE_CATEGORIES and decision.category != 'other':
+        return decision.category, decision.confidence, decision.explanation
+
+    return 'other', decision.confidence, decision.explanation
+
+
+def _decorate_expenses(expenses):
+    for expense in expenses:
+        if expense.ml_confidence >= 0.75:
+            expense.confidence_label = 'висока впевненість'
+        elif expense.ml_confidence >= 0.5:
+            expense.confidence_label = 'середня впевненість'
+        elif expense.ml_confidence > 0:
+            expense.confidence_label = 'низька впевненість'
+        else:
+            expense.confidence_label = 'не визначено автоматично'
+    return expenses
 
 
 def signup_view(request):
@@ -107,6 +135,7 @@ def dashboard(request):
 
     budgets = CategoryBudget.objects.filter(user=user)
     budget_stats = []
+
     for budget in budgets:
         spent = expenses_qs.filter(category=budget.category).aggregate(total=Sum('amount'))['total'] or 0
         percent = float(spent) / float(budget.monthly_limit) * 100 if budget.monthly_limit > 0 else 0
@@ -118,7 +147,10 @@ def dashboard(request):
             'percent': percent,
         })
 
-    advice_list = build_emotional_advice(list(today_expenses), list(expenses_qs.filter(is_emotional=True)))
+    advice_list = build_emotional_advice(
+        list(today_expenses),
+        list(expenses_qs.filter(is_emotional=True))
+    )
 
     context = {
         'total_expenses': total_expenses,
@@ -127,7 +159,6 @@ def dashboard(request):
         'emotional_total': emotional_total,
         'emotional_percent': emotional_percent,
         'advice_list': advice_list,
-
         'cat_labels_json': json.dumps(cat_labels),
         'cat_values_json': json.dumps(cat_values),
         'day_labels_json': json.dumps(day_labels),
@@ -135,10 +166,10 @@ def dashboard(request):
         'cashflow_labels_json': json.dumps(cashflow_labels),
         'cashflow_incomes_json': json.dumps(cashflow_incomes),
         'cashflow_expenses_json': json.dumps(cashflow_expenses),
-
         'budget_stats': budget_stats,
         'category_breakdown': category_breakdown,
     }
+
     return render(request, 'expenses/dashboard.html', context)
 
 
@@ -148,17 +179,18 @@ def expense_list(request):
 
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
+
     if date_from:
         qs = qs.filter(created_at__date__gte=date_from)
     if date_to:
         qs = qs.filter(created_at__date__lte=date_to)
 
-    context = {
-        'expenses': qs,
-    }
+    expenses = _decorate_expenses(list(qs))
+    context = {'expenses': expenses}
 
     if request.headers.get('HX-Request') == 'true':
         return render(request, 'expenses/partials/_expense_table.html', context)
+
     return render(request, 'expenses/expense_list.html', context)
 
 
@@ -166,48 +198,47 @@ def expense_list(request):
 def expense_create(request):
     if request.method == 'POST':
         form = ExpenseForm(request.POST)
+
         if form.is_valid():
             expense = form.save(commit=False)
             expense.user = request.user
 
-            cat, conf = safe_predict_expense_category(expense.description)
-            valid_categories = {c[0] for c in Expense.CATEGORY_CHOICES}
-
-            logger.info(
-                'ML predicted category=%s, conf=%.3f for user=%s',
-                cat, conf, request.user.id
-            )
-
-            if conf < 0.5:
-                manual_cat = form.cleaned_data.get('category') or 'other'
-                expense.category = manual_cat if manual_cat in valid_categories else 'other'
-            else:
-                predicted_cat = cat if cat in valid_categories else 'other'
-                manual_cat = form.cleaned_data.get('category')
-                if manual_cat and manual_cat in valid_categories and manual_cat != predicted_cat:
-                    expense.category = manual_cat
-                else:
-                    expense.category = predicted_cat
-
-            expense.ml_confidence = conf
+            manual_category = request.POST.get('category')
+            category, confidence, explanation = _resolve_expense_category(expense.description, manual_category)
+            expense.category = category
+            expense.ml_confidence = confidence
 
             now_dt = timezone.now()
-            is_emotional, tag = analyze_emotional_expense(expense.description, expense.category, now_dt)
-            expense.is_emotional = is_emotional
-            expense.emotional_tag = tag
+            emotional_decision = analyze_emotional_expense_details(expense.description, expense.category, now_dt)
+            expense.is_emotional = emotional_decision.is_emotional
+            expense.emotional_tag = emotional_decision.tag
+
+            logger.info(
+                'Expense resolved category=%s confidence=%.3f emotional=%s tag=%s user=%s description=%s',
+                expense.category,
+                expense.ml_confidence,
+                expense.is_emotional,
+                expense.emotional_tag,
+                request.user.id,
+                expense.description,
+            )
 
             expense.save()
-            messages.success(request, 'Витрату успішно додано.')
+            messages.success(request, f'Витрату додано. {explanation}')
+            if expense.is_emotional:
+                messages.warning(request, emotional_decision.reason)
 
             if request.headers.get('HX-Request') == 'true':
-                qs = Expense.objects.filter(user=request.user)
+                qs = _decorate_expenses(list(Expense.objects.filter(user=request.user)))
                 return render(request, 'expenses/partials/_expense_table.html', {'expenses': qs})
+
             return redirect('expense_list')
     else:
         form = ExpenseForm()
 
     if request.headers.get('HX-Request') == 'true':
         return render(request, 'expenses/partials/_expense_form.html', {'form': form})
+
     return render(request, 'expenses/expense_form.html', {'form': form})
 
 
@@ -218,25 +249,35 @@ def expense_edit(request, pk):
 
     if request.method == 'POST':
         form = ExpenseForm(request.POST, instance=expense)
+
         if form.is_valid():
             expense = form.save(commit=False)
-            new_category = expense.category
+            manual_category = request.POST.get('category')
+            category, confidence, explanation = _resolve_expense_category(expense.description, manual_category)
+            expense.category = category
+            expense.ml_confidence = confidence
 
-            is_emotional, tag = analyze_emotional_expense(expense.description, expense.category, expense.created_at)
-            expense.is_emotional = is_emotional
-            expense.emotional_tag = tag
+            emotional_decision = analyze_emotional_expense_details(
+                expense.description,
+                expense.category,
+                expense.created_at,
+            )
+            expense.is_emotional = emotional_decision.is_emotional
+            expense.emotional_tag = emotional_decision.tag
             expense.save()
 
-            if old_category != new_category:
+            if old_category != expense.category:
                 CategoryFeedback.objects.update_or_create(
                     expense=expense,
                     defaults={
                         'original_category': old_category,
-                        'corrected_category': new_category,
+                        'corrected_category': expense.category,
                     }
                 )
 
-            messages.success(request, 'Витрату оновлено.')
+            messages.success(request, f'Витрату оновлено. {explanation}')
+            if expense.is_emotional:
+                messages.warning(request, emotional_decision.reason)
             return redirect('expense_list')
     else:
         form = ExpenseForm(instance=expense)
@@ -252,9 +293,11 @@ def expense_delete(request, pk):
     expense = get_object_or_404(Expense, pk=pk, user=request.user)
     expense.delete()
     messages.success(request, 'Витрату видалено.')
+
     if request.headers.get('HX-Request') == 'true':
-        qs = Expense.objects.filter(user=request.user)
+        qs = _decorate_expenses(list(Expense.objects.filter(user=request.user)))
         return render(request, 'expenses/partials/_expense_table.html', {'expenses': qs})
+
     return redirect('expense_list')
 
 
@@ -312,21 +355,31 @@ def budget_list(request):
 def transaction_import(request):
     if request.method == 'POST':
         form = TransactionImportForm(request.POST, request.FILES)
+
         if form.is_valid():
-            stats = import_transactions(
-                request.user,
-                form.cleaned_data['file'],
-                source_format=form.cleaned_data['source_format'],
-            )
-            if stats['created_expenses'] or stats['created_incomes']:
-                messages.success(
-                    request,
-                    f"Імпорт завершено: витрат {stats['created_expenses']}, доходів {stats['created_incomes']}, пропущено дублікатів {stats['skipped_duplicates']}."
+            try:
+                stats = import_transactions(
+                    request.user,
+                    form.cleaned_data['file'],
+                    source_format=form.cleaned_data['source_format'],
                 )
-            else:
-                messages.warning(request, 'Імпорт не додав нових операцій. Можливо, всі записи вже існують.')
-            for err in stats['errors'][:3]:
-                messages.error(request, f'Помилка імпорту: {err}')
+
+                if stats['created_expenses'] or stats['created_incomes']:
+                    messages.success(
+                        request,
+                        f"Імпорт завершено: витрат {stats['created_expenses']}, "
+                        f"доходів {stats['created_incomes']}, "
+                        f"пропущено дублікатів {stats['skipped_duplicates']}."
+                    )
+                else:
+                    messages.warning(request, 'Імпорт не додав нових операцій. Можливо, всі записи вже існують.')
+
+                for err in stats['errors'][:8]:
+                    messages.error(request, f'Попередження імпорту: {err}')
+
+            except Exception as exc:
+                messages.error(request, f'Помилка імпорту: {exc}')
+
             return redirect('transaction_import')
     else:
         form = TransactionImportForm()
@@ -343,8 +396,8 @@ def transaction_export(request):
 
     writer = csv.writer(response, delimiter=';')
     writer.writerow([
-        'type', 'date', 'amount', 'category', 'description',
-        'notes', 'is_emotional', 'emotional_tag', 'ml_confidence'
+        'type', 'date', 'amount', 'category', 'description', 'notes',
+        'is_emotional', 'emotional_tag', 'ml_confidence'
     ])
 
     expenses = Expense.objects.filter(user=request.user).order_by('-created_at')
@@ -370,10 +423,7 @@ def transaction_export(request):
             income.amount,
             income.category,
             income.description,
-            '',
-            '',
-            '',
-            '',
+            '', '', '', '',
         ])
 
     return response
@@ -429,6 +479,7 @@ def emotional_report(request):
     )[:5]
 
     top_tag_name = tag_labels[0] if tag_labels else None
+
     advice_list = build_emotional_advice(
         list(Expense.objects.filter(user=user, created_at__date=today)),
         list(emotional_qs),
@@ -438,14 +489,11 @@ def emotional_report(request):
         'total': total,
         'emotional_total': emotional_total,
         'emotional_percent': emotional_percent,
-
         'tag_labels_json': json.dumps(tag_labels),
         'tag_values_json': json.dumps(tag_values),
-
         'emo_days_labels_json': json.dumps(emo_days_labels),
         'emo_values_json': json.dumps(emo_values),
         'normal_values_json': json.dumps(normal_values),
-
         'top_days': top_days,
         'top_tag_name': top_tag_name,
         'advice_list': advice_list,

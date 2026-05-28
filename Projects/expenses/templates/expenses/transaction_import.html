@@ -6,24 +6,26 @@
 
 <div class="actions">
     <a class="btn btn-light" href="{% url 'transaction_export' %}">Експортувати поточні дані</a>
+    <a class="btn btn-secondary" href="{% url 'expense_list' %}">Перейти до витрат</a>
 </div>
 
 <div class="grid grid-2">
     <div class="card">
+        <h2>Завантажити файл</h2>
         <form method="post" enctype="multipart/form-data" class="form-grid">
             {% csrf_token %}
+
             <div>
-                <label for="{{ form.source_format.id_for_label }}">Формат імпорту</label>
+                <label>Формат імпорту</label>
                 {{ form.source_format }}
                 {{ form.source_format.errors }}
+                {% if form.source_format.help_text %}<div class="help">{{ form.source_format.help_text }}</div>{% endif %}
             </div>
 
             <div>
-                <label for="{{ form.file.id_for_label }}">CSV-файл</label>
+                <label>Файл з транзакціями</label>
                 {{ form.file }}
-                {% if form.file.help_text %}
-                    <div class="help">{{ form.file.help_text }}</div>
-                {% endif %}
+                {% if form.file.help_text %}<div class="help">{{ form.file.help_text }}</div>{% endif %}
                 {{ form.file.errors }}
             </div>
 
@@ -33,10 +35,32 @@
 
     <div class="card">
         <h2>Що підтримується</h2>
-        <p>Система підтримує універсальний імпорт CSV або TSV. Мінімально потрібні колонки: дата, сума й опис.</p>
-        <p class="muted">Бажані заголовки колонок: date, time, amount, description, type, category. Також розпізнаються українські та російські варіанти: дата, сума, опис, тип, категорія.</p>
-        <p class="muted">Витрати можна передавати як від’ємну суму або як тип expense. Доходи — як додатну суму або тип income.</p>
-        <p class="muted">Окремих реальних шаблонів monobank або PrivatBank у проєкті немає, тому імпорт працює у форматі mono-like / privat-like за назвами колонок.</p>
+        <p>Система підтримує імпорт транзакцій з файлів CSV, TSV, TXT, XLSX та XLS.</p>
+        <p class="muted">Після імпорту витрати автоматично проходять категоризацію та перевірку на емоційність.</p>
+        <p class="muted">Мінімально потрібні колонки: дата, сума та назва або опис операції. Додатково можуть використовуватися тип операції та категорія.</p>
+        <p class="muted">Підтримуються назви колонок date, datetime, amount, sum, description, merchant, details, type, category, а також дата, сума, опис, призначення, тип, категорія.</p>
+        <p class="muted">Для Monobank або PrivatBank оберіть відповідний формат, якщо файл має схожу структуру. Якщо структура відрізняється, система спробує автоматично розпізнати основні колонки.</p>
+    </div>
+</div>
+
+<div class="card" style="margin-top:16px;">
+    <h2>Приклад структури CSV</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>date</th>
+                    <th>amount</th>
+                    <th>description</th>
+                    <th>type</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>2026-05-27 17:44</td><td>-60</td><td>Кава</td><td>expense</td></tr>
+                <tr><td>2026-05-27 18:20</td><td>-350</td><td>Сукня</td><td>expense</td></tr>
+                <tr><td>2026-05-27 19:10</td><td>15000</td><td>Зарплата</td><td>income</td></tr>
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}

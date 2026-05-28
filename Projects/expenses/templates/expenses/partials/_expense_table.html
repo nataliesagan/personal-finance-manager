@@ -3,7 +3,7 @@
     <thead>
         <tr>
             <th>Дата</th>
-            <th>Опис</th>
+            <th>Назва / опис</th>
             <th>Категорія</th>
             <th>Сума</th>
             <th>Емоційність</th>
@@ -17,28 +17,33 @@
                 <td>
                     <strong>{{ e.description }}</strong>
                     {% if e.notes %}
-                        <div class="muted" style="margin-top:6px;">{{ e.notes }}</div>
+                        <div class="muted small" style="margin-top:6px;">{{ e.notes }}</div>
                     {% endif %}
-                    <div class="muted" style="margin-top:6px;">
-                        ШІ впевненість: {{ e.ml_confidence|floatformat:2 }}
-                        {% if e.ml_confidence < 0.5 %}
-                            <span class="danger-text">(низька впевненість)</span>
+                    <div class="muted small" style="margin-top:6px;">
+                        Автоматичне визначення:
+                        {% if e.ml_confidence >= 0.75 %}
+                            <span class="tag tag-success">{{ e.confidence_label }} {{ e.ml_confidence|floatformat:2 }}</span>
+                        {% elif e.ml_confidence >= 0.5 %}
+                            <span class="tag tag-warning">{{ e.confidence_label }} {{ e.ml_confidence|floatformat:2 }}</span>
+                        {% elif e.ml_confidence > 0 %}
+                            <span class="tag tag-danger">{{ e.confidence_label }} {{ e.ml_confidence|floatformat:2 }}</span>
+                        {% else %}
+                            <span class="tag tag-danger">не визначено автоматично</span>
                         {% endif %}
                     </div>
                 </td>
-                <td>{{ e.get_category_display }}</td>
+                <td><strong>{{ e.get_category_display }}</strong></td>
                 <td>{{ e.amount|floatformat:2 }} грн</td>
                 <td>
                     {% if e.is_emotional %}
-                        <span class="tag">{{ e.get_emotional_tag_display }}</span>
+                        <span class="tag tag-warning">{{ e.get_emotional_tag_display }}</span>
                     {% else %}
-                        <span class="muted">звичайна</span>
+                        <span class="tag tag-gray">звичайна витрата</span>
                     {% endif %}
                 </td>
                 <td>
                     <div class="actions" style="margin: 0;">
                         <a class="btn btn-light" href="{% url 'expense_edit' e.pk %}">Редагувати</a>
-
                         <form method="post" action="{% url 'expense_delete' e.pk %}" class="inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger">Видалити</button>
@@ -50,5 +55,5 @@
     </tbody>
 </table>
 {% else %}
-    <p class="muted">Ще немає витрат. Додайте першу або імпортуйте виписку.</p>
+    <p class="muted">Ще немає витрат. Додайте першу витрату вручну або імпортуйте банківську виписку.</p>
 {% endif %}

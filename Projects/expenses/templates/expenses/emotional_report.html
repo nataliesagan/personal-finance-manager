@@ -25,9 +25,51 @@
     </div>
 </div>
 
+<div class="card" style="margin-top:16px;">
+    <h2>Принцип роботи аналізу</h2>
+    <p class="muted">
+        Емоційні витрати визначаються за назвою або описом операції, категорією та часом здійснення витрати.
+        Система шукає покупки, які часто є імпульсивними або емоційно мотивованими.
+    </p>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Тип</th>
+                    <th>Приклади</th>
+                    <th>Логіка визначення</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Фастфуд / імпульсивна їжа</td>
+                    <td>кава, кафе, торт, десерт, піца, суші, донат</td>
+                    <td>Ключові слова у назві або описі витрати.</td>
+                </tr>
+                <tr>
+                    <td>Онлайн-шопінг</td>
+                    <td>Rozetka, Amazon, AliExpress, Makeup, онлайн-покупка</td>
+                    <td>Назви магазинів або ознаки онлайн-замовлення.</td>
+                </tr>
+                <tr>
+                    <td>Розваги</td>
+                    <td>кіно, Netflix, Spotify, концерт, бар, караоке</td>
+                    <td>Ключові слова або категорія “Розваги”.</td>
+                </tr>
+                <tr>
+                    <td>Пізні витрати</td>
+                    <td>вечірні або нічні покупки</td>
+                    <td>Їжа, шопінг або розваги у вечірній чи нічний час.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <div class="grid grid-2" style="margin-top:16px;">
     <div class="card">
-        <h2>Що з цим робити</h2>
+        <h2>Поради</h2>
         <ul class="clean">
             {% for advice in advice_list %}
                 <li>{{ advice }}</li>
@@ -44,24 +86,15 @@
         {% else %}
             <p class="muted">Ще недостатньо даних для детального висновку.</p>
         {% endif %}
-
-        <div class="chart-box">
-            <canvas id="emotionTagChart"></canvas>
-        </div>
-        <div id="emotionTagChartEmpty" class="empty-chart-text" style="display:none;">
-            Поки немає даних для побудови графіка.
-        </div>
+        <div class="chart-box"><canvas id="emotionTagChart"></canvas></div>
+        <div id="emotionTagChartEmpty" class="empty-chart-text" style="display:none;">Поки немає даних для побудови графіка.</div>
     </div>
 </div>
 
 <div class="card chart-card" style="margin-top:16px;">
     <h2>Емоційні та звичайні витрати по днях</h2>
-    <div class="chart-box tall">
-        <canvas id="emotionTrendChart"></canvas>
-    </div>
-    <div id="emotionTrendChartEmpty" class="empty-chart-text" style="display:none;">
-        Недостатньо даних для побудови графіка.
-    </div>
+    <div class="chart-box tall"><canvas id="emotionTrendChart"></canvas></div>
+    <div id="emotionTrendChartEmpty" class="empty-chart-text" style="display:none;">Недостатньо даних для побудови графіка.</div>
 </div>
 
 <div class="card" style="margin-top:16px;">
@@ -69,18 +102,10 @@
     {% if top_days %}
         <div class="table-wrap">
             <table>
-                <thead>
-                    <tr>
-                        <th>Дата</th>
-                        <th>Сума емоційних витрат</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>Дата</th><th>Сума емоційних витрат</th></tr></thead>
                 <tbody>
                     {% for d in top_days %}
-                        <tr>
-                            <td>{{ d.day }}</td>
-                            <td>{{ d.amount|floatformat:2 }} грн</td>
-                        </tr>
+                        <tr><td>{{ d.day }}</td><td>{{ d.amount|floatformat:2 }} грн</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -94,98 +119,49 @@
 {% block extra_scripts %}
 <script>
     function parseJsonSafe(value, fallback = []) {
-        try {
-            return JSON.parse(value);
-        } catch (e) {
-            return fallback;
-        }
+        try { return JSON.parse(value); } catch (e) { return fallback; }
     }
 
     function showEmptyChart(canvasId, emptyId) {
         const canvas = document.getElementById(canvasId);
         const empty = document.getElementById(emptyId);
-
-        if (canvas) {
-            canvas.style.display = 'none';
-        }
-        if (empty) {
-            empty.style.display = 'block';
-        }
+        if (canvas) canvas.style.display = 'none';
+        if (empty) empty.style.display = 'block';
     }
 
     const tagLabels = parseJsonSafe('{{ tag_labels_json|escapejs }}');
     const tagValues = parseJsonSafe('{{ tag_values_json|escapejs }}');
-
     const emoDaysLabels = parseJsonSafe('{{ emo_days_labels_json|escapejs }}');
     const emoValues = parseJsonSafe('{{ emo_values_json|escapejs }}');
     const normalValues = parseJsonSafe('{{ normal_values_json|escapejs }}');
 
     if (tagLabels.length && tagValues.length) {
-        const ctxTag = document.getElementById('emotionTagChart');
-        new Chart(ctxTag, {
+        new Chart(document.getElementById('emotionTagChart'), {
             type: 'pie',
-            data: {
-                labels: tagLabels,
-                datasets: [{
-                    label: 'Емоційні витрати',
-                    data: tagValues,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
+            data: { labels: tagLabels, datasets: [{ label: 'Емоційні витрати', data: tagValues, borderWidth: 1 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
         });
     } else {
         showEmptyChart('emotionTagChart', 'emotionTagChartEmpty');
     }
 
     if (emoDaysLabels.length && (emoValues.length || normalValues.length)) {
-        const ctxTrend = document.getElementById('emotionTrendChart');
-        new Chart(ctxTrend, {
+        new Chart(document.getElementById('emotionTrendChart'), {
             type: 'bar',
             data: {
                 labels: emoDaysLabels,
                 datasets: [
-                    {
-                        label: 'Емоційні витрати',
-                        data: emoValues,
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'Звичайні витрати',
-                        data: normalValues,
-                        borderWidth: 1
-                    }
+                    { label: 'Емоційні витрати', data: emoValues, borderWidth: 1 },
+                    { label: 'Звичайні витрати', data: normalValues, borderWidth: 1 }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: {
-                    intersect: false,
-                    mode: 'index'
-                },
+                interaction: { intersect: false, mode: 'index' },
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'грн'
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            maxRotation: 45,
-                            minRotation: 45
-                        }
-                    }
+                    y: { beginAtZero: true, title: { display: true, text: 'грн' } },
+                    x: { ticks: { maxRotation: 45, minRotation: 45 } }
                 }
             }
         });
