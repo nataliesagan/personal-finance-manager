@@ -1,61 +1,100 @@
 # Personal Finance Manager
 
-Веб-сервіс для управління персональними фінансами з автоматичною категоризацією витрат на основі штучного інтелекту.
+Веб-сервіс для управління персональними фінансами з автоматичною 
+категоризацією витрат на основі штучного інтелекту.
 
-## Про проєкт
+---
 
-Система дозволяє користувачам:
-- вести облік доходів і витрат
-- автоматично категоризувати витрати за допомогою ML-моделі
-- налаштовувати місячні бюджети по категоріях
-- переглядати аналітику та графіки на дашборді
-- аналізувати емоційні (імпульсивні) витрати
-- імпортувати та експортувати дані у форматі CSV
+## Автор
 
-## Технологічний стек
+- **ПІБ**: Саган Наталія Костянтинівна
+- **Група**: ФеС-42
+- **Керівник**: Шувар Роман Ярославович, проф.
+- **Дата виконання**: 2026
 
-- **Backend:** Python 3.10+, Django 4.x
-- **ML:** scikit-learn, TF-IDF, Logistic Regression
-- **Frontend:** Tailwind CSS, HTMX, Chart.js
-- **База даних:** SQLite
+---
 
-## Вимоги
+## Загальна інформація
+
+- **Тип проєкту**: Веб-застосунок
+- **Мова програмування**: Python
+- **Фреймворки / Бібліотеки**: Django, scikit-learn, HTMX, Tailwind CSS, Chart.js
+
+---
+
+## Опис функціоналу
+
+- Реєстрація та авторизація користувачів
+- Облік витрат і доходів з категоріями
+- Автоматична категоризація витрат за допомогою ML (TF-IDF + Logistic Regression)
+- Дашборд з аналітикою та графіками
+- Аналіз емоційних (імпульсивних) витрат
+- Імпорт/експорт даних у форматі CSV (Monobank, PrivatBank)
+- Налаштування місячних бюджетів по категоріях
+
+---
+
+## Опис основних файлів
+
+| Файл | Призначення |
+|------|-------------|
+| `expenses/models.py` | Моделі: Expense, Income, CategoryBudget, CategoryFeedback |
+| `expenses/views.py` | Представлення: дашборд, списки, форми |
+| `expenses/urls.py` | Маршрути додатку |
+| `expenses/forms.py` | Django-форми |
+| `expenses/emotion_rules.py` | Правила виявлення емоційних витрат |
+| `expenses/ml/train_classifier.py` | Навчання ML-моделі |
+| `expenses/ml/expense_classifier.py` | Завантаження моделі та predict_category() |
+| `expenses/ml/train_from_feedback.py` | Донавчання на основі фідбеку |
+| `expenses/services/bank_io.py` | Імпорт/експорт CSV |
+| `finance_manager/settings.py` | Налаштування проєкту |
+
+---
+
+## Як запустити проєкт
+
+### 1. Встановлення інструментів
 
 - Python 3.10+
-- pip
 
-## Встановлення та запуск
+### 2. Клонування репозиторію
 
-### 1. Клонувати репозиторій
 ```bash
 git clone https://github.com/nataliesagan/personal-finance-manager
 cd personal-finance-manager/Projects
 ```
 
-### 2. Встановити залежності
+### 3. Встановлення залежностей
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Виконати міграції
+### 4. Міграції бази даних
+
 ```bash
 python manage.py migrate
 ```
 
-### 4. Наповнити базу тестовими даними
+### 5. Наповнення тестовими даними
+
 ```bash
 python manage.py seed_test_data
 ```
 
-### 5. Запустити сервер
+### 6. Запуск сервера
+
 ```bash
 python manage.py runserver
 ```
 
-### 6. Відкрити у браузері
+### 7. Відкрити у браузері
+
 ```
 http://127.0.0.1:8000
 ```
+
+---
 
 ## Запуск тестів
 
@@ -63,73 +102,23 @@ http://127.0.0.1:8000
 python manage.py test
 ```
 
+---
+
 ## Навчання ML-моделі
 
 ```bash
 python expenses/ml/train_classifier.py
 ```
 
-## Донавчання моделі на основі фідбеку користувача
+## Донавчання на основі фідбеку користувача
 
 ```bash
 python expenses/ml/train_from_feedback.py
 ```
 
-## Структура проєкту
+---
 
-```
-Projects/
-├── expenses/                         # Основний додаток
-│   ├── management/
-│   │   └── commands/
-│   │       ├── seed_demo_data.py     # Демо-дані
-│   │       └── seed_test_data.py     # Тестові дані
-│   ├── migrations/                   # Міграції БД
-│   ├── ml/
-│   │   ├── data/
-│   │   │   └── expenses_train.csv    # Навчальний датасет
-│   │   ├── models/
-│   │   │   └── expense_classifier.joblib  # Збережена ML-модель
-│   │   ├── expense_classifier.py     # Завантаження моделі та predict_category()
-│   │   ├── train_classifier.py       # Навчання моделі
-│   │   └── train_from_feedback.py    # Донавчання на фідбеку
-│   ├── services/
-│   │   ├── bank_io.py                # Імпорт/експорт CSV (Monobank, PrivatBank)
-│   │   └── emotional_advice.py       # Поради щодо емоційних витрат
-│   ├── templates/expenses/
-│   │   ├── partials/
-│   │   │   ├── _expense_form.html    # HTMX-форма витрати
-│   │   │   └── _expense_table.html   # HTMX-таблиця витрат
-│   │   ├── base.html                 # Базовий шаблон
-│   │   ├── dashboard.html            # Дашборд
-│   │   ├── budget_list.html          # Бюджети
-│   │   ├── emotional_report.html     # Емоційні витрати
-│   │   ├── expense_list.html         # Список витрат
-│   │   ├── expense_edit.html         # Редагування витрати
-│   │   ├── expense_form.html         # Форма витрати
-│   │   ├── income_list.html          # Список доходів
-│   │   └── transaction_import.html   # Імпорт транзакцій
-│   │   └── registration/
-│   │       ├── login.html
-│   │       └── signup.html
-│   ├── admin.py
-│   ├── apps.py
-│   ├── emotion_rules.py              # Правила виявлення емоційних витрат
-│   ├── forms.py                      # Django-форми
-│   ├── models.py                     # Expense, Income, CategoryBudget, CategoryFeedback
-│   ├── tests.py                      # Тести
-│   ├── urls.py                       # Маршрути
-│   └── views.py                      # Представлення
-├── finance_manager/                  # Конфігурація проєкту
-│   ├── asgi.py
-│   ├── settings.py
-│   ├── urls.py
-│   └── wsgi.py
-├── db.sqlite3                        # База даних
-└── manage.py
-```
-
-## Маршрути
+## Маршрути Django
 
 | URL | Опис |
 |-----|------|
@@ -141,6 +130,50 @@ Projects/
 | `/transactions/import/` | Імпорт CSV |
 | `/transactions/export/` | Експорт CSV |
 
-## Автор
+---
 
-Саган Наталія Костянтинівна  
+## Інструкція для користувача
+
+1. **Головна сторінка (дашборд)** — загальна аналітика, графіки витрат по категоріях, стан бюджетів
+2. **Витрати** — додавання, редагування, видалення витрат; ML автоматично визначає категорію
+3. **Доходи** — облік доходів по категоріях
+4. **Бюджети** — встановлення місячного ліміту по кожній категорії
+5. **Емоційні витрати** — аналіз імпульсивних покупок за ключовими словами
+6. **Імпорт CSV** — завантаження виписки з Monobank або PrivatBank
+
+---
+
+## Скріншоти
+
+![Screenshot 1](screenshots/Screenshot%20(2).png)
+![Screenshot 2](screenshots/Screenshot%20(3).png)
+![Screenshot 3](screenshots/Screenshot%20(4).png)
+![Screenshot 4](screenshots/Screenshot%20(5).png)
+
+---
+
+## Проблеми і рішення
+
+| Проблема | Рішення |
+|----------|---------|
+| Модель не завантажується | Запустіть `train_classifier.py` для створення `.joblib` файлу |
+| Помилка міграцій | Видаліть `db.sqlite3` і запустіть `migrate` знову |
+| CSV не імпортується | Перевірте формат файлу — підтримується Monobank, PrivatBank, стандарт |
+
+---
+
+## Releases
+
+Версія `v1.0` доступна за посиланням:
+https://github.com/nataliesagan/personal-finance-manager/releases/tag/v1.0
+
+---
+
+## Використані джерела
+
+- [Django документація](https://docs.djangoproject.com/)
+- [scikit-learn документація](https://scikit-learn.org/)
+- [HTMX документація](https://htmx.org/)
+- [Tailwind CSS документація](https://tailwindcss.com/)
+- [Chart.js документація](https://www.chartjs.org/)
+```
